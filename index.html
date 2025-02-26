@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tugrul Bayraktar | Terminal</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <canvas id="matrix"></canvas>
+    <div class="container">
+        <div class="terminal">
+            <div class="terminal-header">
+                <div class="terminal-buttons">
+                    <span class="terminal-button close"></span>
+                    <span class="terminal-button minimize"></span>
+                    <span class="terminal-button maximize"></span>
+                </div>
+                <div class="terminal-title">tugrul@bayraktar:~</div>
+                <button id="musicToggle" class="music-toggle">
+                    <span class="command">♪ Music: OFF</span>
+                </button>
+            </div>
+            <div class="terminal-content">
+                <div class="profile-section">
+                    <div class="profile-image">
+                        <img src="https://avatars.githubusercontent.com/tugrulbayraktar" alt="Tugrul Bayraktar" class="avatar">
+                    </div>
+                    <div class="profile-info">
+                        <div class="command">$ whoami</div>
+                        <h1><span class="prompt">></span> Tugrul Bayraktar</h1>
+                        
+                        <div class="command">$ cat about.txt</div>
+                        <div class="description">
+                            <p><span class="prompt">></span> Student @ Boğaziçi University</p>
+                            <p><span class="prompt">></span></p>
+                            <p><span class="prompt">></span> Istanbul, Turkey</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="posts-section">
+                    <div class="command">$ ls -l /posts</div>
+                    <div class="posts">
+                        <div class="post">
+                            <span class="date">2024-03-15</span>
+                            <span class="title">Getting-Started-with-Web-Development.md</span>
+                        </div>
+                        <div class="post">
+                            <span class="date">2024-03-10</span>
+                            <span class="title">Best-Practices-in-Modern-CSS.md</span>
+                        </div>
+                        <div class="post">
+                            <span class="date">2024-03-05</span>
+                            <span class="title">Understanding-React-Hooks.md</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="contact-section">
+                    <div class="command">$ contact --help</div>
+                    <button class="terminal-button">./contact.sh</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Matrix rain effect
+        const canvas = document.getElementById('matrix');
+        const ctx = canvas.getContext('2d');
+
+        // Set canvas size to window size
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        // Characters to use in the Matrix rain
+        const chars = 'アァカサタナハマヤャラワガザダバパイィキシチニヒミリヰギジヂビピウゥクスツヌフムユュルグズブヅプエェケセテネヘメレヱゲゼデベペオォコソトノホモヨョロヲゴゾドボポヴッン0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        const charArray = chars.split('');
+
+        // Font size and number of columns
+        const fontSize = 14;
+        const columns = canvas.width / fontSize;
+
+        // Array to track the y position of each drop
+        const drops = [];
+        for (let i = 0; i < columns; i++) {
+            drops[i] = 1;
+        }
+
+        // Drawing the characters
+        function draw() {
+            // Black background with opacity to create trail effect
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Green text
+            ctx.fillStyle = '#0F0';
+            ctx.font = fontSize + 'px monospace';
+
+            // Drawing the characters
+            for (let i = 0; i < drops.length; i++) {
+                // Random character
+                const text = charArray[Math.floor(Math.random() * charArray.length)];
+                
+                // x = i * fontSize, y = drops[i] * fontSize
+                ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+
+                // Sending the drop back to top randomly after it has crossed the screen
+                if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+                    drops[i] = 0;
+                }
+
+                drops[i]++;
+            }
+        }
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+
+        // Animation loop
+        setInterval(draw, 35);
+    </script>
+
+    <script>
+        // Tek bir Audio Context kullanalım
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        let isPlaying = false;
+        let melodyTimeout = null; // Müziği durdurmak için timeout'u takip edelim
+
+        // Beep fonksiyonu
+        function beep(frequency = 440, volume = 0.3) {
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.type = 'square';
+            oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
+            
+            gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+            gainNode.gain.linearRampToValueAtTime(volume, audioContext.currentTime + 0.01);
+            gainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + 0.1);
+            
+            oscillator.start();
+            oscillator.stop(audioContext.currentTime + 0.1);
+        }
+
+        // Hover beep olayları
+        document.querySelectorAll('.post').forEach(element => {
+            element.addEventListener('mouseenter', () => beep(440, 0.4));
+        });
+
+        document.querySelectorAll('.terminal-button').forEach(element => {
+            element.addEventListener('mouseenter', () => beep(523.25, 0.3));
+        });
+
+        document.querySelectorAll('button').forEach(element => {
+            element.addEventListener('mouseenter', () => beep(659.25, 0.5));
+        });
+
+        // Müzik fonksiyonları
+        function createNote(frequency, startTime, duration, volume = 0.3) {
+            const osc = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+            
+            osc.connect(gain);
+            gain.connect(audioContext.destination);
+            
+            osc.type = 'square';
+            osc.frequency.setValueAtTime(frequency, startTime);
+            
+            gain.gain.setValueAtTime(volume, startTime);
+            gain.gain.linearRampToValueAtTime(volume, startTime + duration - 0.05);
+            gain.gain.linearRampToValueAtTime(0, startTime + duration);
+            
+            osc.start(startTime);
+            osc.stop(startTime + duration);
+        }
+
+        function playMelody() {
+            if (!isPlaying) return; // Müzik kapalıysa çalmayı durdur
+
+            const now = audioContext.currentTime;
+            const bpm = 150;
+            const quarterNote = 60 / bpm;
+            
+            const melody = [
+                { note: 659.25, duration: quarterNote/2 }, // E5
+                { note: 659.25, duration: quarterNote/2 }, // E5
+                { note: 0, duration: quarterNote/2 },      // Rest
+                { note: 659.25, duration: quarterNote/2 }, // E5
+                { note: 0, duration: quarterNote/2 },      // Rest
+                { note: 523.25, duration: quarterNote/2 }, // C5
+                { note: 659.25, duration: quarterNote/2 }, // E5
+                { note: 0, duration: quarterNote/2 },      // Rest
+                { note: 783.99, duration: quarterNote/2 }, // G5
+                { note: 0, duration: quarterNote },        // Rest
+                { note: 392.00, duration: quarterNote/2 }  // G4
+            ];
+
+            let timeOffset = 0;
+            melody.forEach(({ note, duration }) => {
+                if (note !== 0) {
+                    createNote(note, now + timeOffset, duration, 0.3);
+                }
+                timeOffset += duration;
+            });
+
+            // Önceki timeout'u temizle ve yeni bir tane oluştur
+            if (melodyTimeout) clearTimeout(melodyTimeout);
+            if (isPlaying) {
+                melodyTimeout = setTimeout(() => playMelody(), timeOffset * 1000);
+            }
+        }
+
+        const musicToggle = document.getElementById('musicToggle');
+        
+        musicToggle.addEventListener('click', () => {
+            if (audioContext.state === 'suspended') {
+                audioContext.resume();
+            }
+            
+            if (isPlaying) {
+                isPlaying = false;
+                if (melodyTimeout) {
+                    clearTimeout(melodyTimeout); // Timeout'u temizle
+                    melodyTimeout = null;
+                }
+                musicToggle.querySelector('.command').textContent = '♪ Music: OFF';
+                musicToggle.classList.remove('playing');
+            } else {
+                isPlaying = true;
+                musicToggle.querySelector('.command').textContent = '♪ Music: ON';
+                musicToggle.classList.add('playing');
+                playMelody();
+            }
+        });
+
+        // İlk tıklamada ses API'sini etkinleştir
+        document.body.addEventListener('click', () => {
+            if (audioContext.state === 'suspended') {
+                audioContext.resume();
+            }
+        }, { once: true });
+    </script>
+</body>
+</html> 
